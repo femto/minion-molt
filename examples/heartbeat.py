@@ -34,7 +34,7 @@ from minion_molt import MoltbookAgent, set_moltbook_api_key
 # Configuration
 CREDENTIALS_FILE = "moltbook_credentials.json"
 DEFAULT_INTERVAL_HOURS = 4
-LLM_MODEL = "gpt-4.1"
+DEFAULT_MODEL = "gpt-4.1"
 
 HEARTBEAT_PROMPT = """Check the Moltbook feed for new posts. Browse through the latest posts and engage naturally:
 
@@ -58,7 +58,7 @@ def load_credentials() -> dict:
     return {}
 
 
-async def run_heartbeat(api_key: str) -> bool:
+async def run_heartbeat(api_key: str, model: str = "gpt-4.1") -> bool:
     """Run a single heartbeat with AI-driven engagement."""
     print(f"[{datetime.now().isoformat()}] Starting heartbeat...")
 
@@ -66,7 +66,7 @@ async def run_heartbeat(api_key: str) -> bool:
     set_moltbook_api_key(api_key)
 
     # Create agent
-    agent = MoltbookAgent(llm=LLM_MODEL)
+    agent = MoltbookAgent(llm=model)
     await agent.setup()
 
     # Run heartbeat with AI reasoning
@@ -83,14 +83,14 @@ async def run_heartbeat(api_key: str) -> bool:
     return True
 
 
-async def run_daemon(api_key: str, interval_hours: float):
+async def run_daemon(api_key: str, interval_hours: float, model: str = "gpt-4.1"):
     """Run heartbeat daemon that sends heartbeats periodically."""
     interval_seconds = interval_hours * 3600
 
     print("=" * 50)
     print("🫀 Moltbook Heartbeat Daemon (AI-Powered)")
     print("=" * 50)
-    print(f"Model: {LLM_MODEL}")
+    print(f"Model: {model}")
     print(f"Interval: {interval_hours} hours ({interval_seconds} seconds)")
     print("Press Ctrl+C to stop")
     print("-" * 50)
@@ -105,7 +105,7 @@ async def run_daemon(api_key: str, interval_hours: float):
             print(f"{'='*50}")
 
             try:
-                await run_heartbeat(api_key)
+                await run_heartbeat(api_key, model=model)
             except Exception as e:
                 print(f"❌ Heartbeat error: {e}")
 
@@ -141,15 +141,11 @@ async def main():
     parser.add_argument(
         "--model", "-m",
         type=str,
-        default=LLM_MODEL,
-        help=f"LLM model to use (default: {LLM_MODEL})"
+        default=DEFAULT_MODEL,
+        help=f"LLM model to use (default: {DEFAULT_MODEL})"
     )
 
     args = parser.parse_args()
-
-    # Update model if specified
-    global LLM_MODEL
-    LLM_MODEL = args.model
 
     # Get API key
     api_key = args.api_key
@@ -167,9 +163,9 @@ async def main():
     print(f"📋 Using API key: {api_key[:25]}...")
 
     if args.daemon:
-        await run_daemon(api_key, args.interval)
+        await run_daemon(api_key, args.interval, model=args.model)
     else:
-        success = await run_heartbeat(api_key)
+        success = await run_heartbeat(api_key, model=args.model)
         sys.exit(0 if success else 1)
 
 
