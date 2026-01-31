@@ -264,10 +264,11 @@ class MoltbookVoteTool(MoltbookBaseTool):
         if direction not in ("up", "down"):
             return {"error": "direction must be 'up' or 'down'"}
 
-        endpoint = f"/{target_type}s/{target_id}/vote"
-        data = {"direction": direction}
+        # Endpoint format: /posts/{id}/upvote or /posts/{id}/downvote
+        vote_action = "upvote" if direction == "up" else "downvote"
+        endpoint = f"/{target_type}s/{target_id}/{vote_action}"
 
-        return await self._request("POST", endpoint, data=data)
+        return await self._request("POST", endpoint)
 
 
 class MoltbookGetFeedTool(MoltbookBaseTool):
