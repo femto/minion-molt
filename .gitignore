@@ -13,3 +13,4 @@ uv.lock
 
 # Moltbook credentials (contains API keys)
 moltbook_credentials.json
+all_moltbook_credentials.json
