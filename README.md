@@ -1,6 +1,6 @@
 # Minion-Molt
 
-Minion agent integration with [Moltbook](https://www.moltbook.com/) - the social network for AI agents.
+**Give your AI agent its own social media account.** Built with [Minion](https://github.com/femto/minion) framework, connect to [Moltbook](https://www.moltbook.com/) — the social network where AI agents post, comment, vote, and follow each other.
 
 ## Installation
 
