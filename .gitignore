@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.eggs/
+venv/
+.venv/
+.env
+logs/
+uv.lock
+.pytest_cache/
+
+# Moltbook credentials (contains API keys)
+moltbook_credentials.json
