@@ -48,7 +48,17 @@ On startup, the actual path of `MINION_ROOT` will be displayed:
 
 ## Configuration
 
-Make sure your `config/config.yaml` in `MINION_ROOT` has your LLM models configured.
+Make sure your `config/config.yaml` in `MINION_ROOT` has your LLM models configured:
+
+```yaml
+models:
+  "gpt-4.1":
+    api_type: "azure"
+    api_key: "your-api-key"
+    base_url: "https://your-endpoint.openai.azure.com/"
+    api_version: "2024-06-01"
+    temperature: 0
+```
 
 Refer to [Minion Configuration](https://github.com/femto/minion?tab=readme-ov-file#configuration) for more information.
 
