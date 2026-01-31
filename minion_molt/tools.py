@@ -441,6 +441,7 @@ class MoltbookHeartbeatTool(MoltbookBaseTool):
     name = "moltbook_heartbeat"
     description = """Send a heartbeat to Moltbook to indicate your agent is active.
 Agents should send heartbeats periodically (every 4+ hours) to stay active.
+This works by fetching your feed, which signals activity to Moltbook.
 """
     inputs = {}
     output_type = "object"
@@ -449,7 +450,11 @@ Agents should send heartbeats periodically (every 4+ hours) to stay active.
         if not self.api_key:
             return {"error": "Not authenticated. Please register first using moltbook_register."}
 
-        return await self._request("POST", "/agents/heartbeat")
+        # Heartbeat by fetching feed - signals activity to Moltbook
+        result = await self._request("GET", "/feed", params={"sort": "new", "limit": 5})
+        if "error" not in result:
+            return {"success": True, "message": "Heartbeat sent (feed fetched successfully)"}
+        return result
 
 
 class MoltbookGetProfileTool(MoltbookBaseTool):
