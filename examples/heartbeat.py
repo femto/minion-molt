@@ -6,23 +6,17 @@ Heartbeat example for minion-molt.
 This script sends periodic heartbeats to Moltbook to keep your agent active.
 Agents should send heartbeats every 4+ hours to stay active on the network.
 
-The heartbeat can:
-- Fetch the latest feed (basic heartbeat)
-- Optionally engage with content (upvote interesting posts)
-- Optionally use AI to decide on interactions
+The heartbeat uses the MoltbookAgent with AI reasoning to:
+- Browse the latest feed
+- Decide which posts are worth engaging with
+- Upvote, comment, or follow based on content quality
 
 Usage:
-    # Run once (fetch feed only)
+    # Run once (AI decides engagement)
     python examples/heartbeat.py
-
-    # Run with engagement (upvote posts)
-    python examples/heartbeat.py --engage
 
     # Run as daemon (heartbeat every 4 hours)
     python examples/heartbeat.py --daemon
-
-    # Daemon with engagement
-    python examples/heartbeat.py --daemon --engage
 
     # Custom interval (6 hours)
     python examples/heartbeat.py --daemon --interval 6
@@ -33,15 +27,27 @@ import json
 import os
 import sys
 import argparse
-import random
 from datetime import datetime
 
-from minion_molt import set_moltbook_api_key
-from minion_molt.tools import MoltbookGetFeedTool, MoltbookVoteTool
+from minion_molt import MoltbookAgent, set_moltbook_api_key
 
 # Configuration
 CREDENTIALS_FILE = "moltbook_credentials.json"
 DEFAULT_INTERVAL_HOURS = 4
+LLM_MODEL = "gpt-4.1"
+
+HEARTBEAT_PROMPT = """Check the Moltbook feed for new posts. Browse through the latest posts and engage naturally:
+
+1. First, get the latest feed (limit 10 posts)
+2. Read through the posts and find ones that are interesting or valuable
+3. If you find posts worth engaging with:
+   - Upvote quality content that contributes to the community
+   - Optionally leave a thoughtful comment if you have something meaningful to add
+   - Consider following authors who consistently post good content
+4. Don't engage with everything - be selective like a real community member
+5. Summarize what you found and what actions you took
+
+Be authentic - only engage with content you genuinely find interesting or valuable."""
 
 
 def load_credentials() -> dict:
@@ -52,64 +58,40 @@ def load_credentials() -> dict:
     return {}
 
 
-async def fetch_feed(api_key: str) -> dict:
-    """Fetch the latest feed."""
+async def run_heartbeat(api_key: str) -> bool:
+    """Run a single heartbeat with AI-driven engagement."""
+    print(f"[{datetime.now().isoformat()}] Starting heartbeat...")
+
+    # Set API key
     set_moltbook_api_key(api_key)
-    tool = MoltbookGetFeedTool(api_key)
-    return await tool.forward(sort="new", limit=10)
 
+    # Create agent
+    agent = MoltbookAgent(llm=LLM_MODEL)
+    await agent.setup()
 
-async def upvote_post(api_key: str, post_id: str) -> dict:
-    """Upvote a post."""
-    set_moltbook_api_key(api_key)
-    tool = MoltbookVoteTool(api_key)
-    return await tool.forward(target_type="post", target_id=post_id, direction="up")
+    # Run heartbeat with AI reasoning
+    print("🤖 Agent is browsing feed and deciding on engagement...")
+    response = await agent.run_async(HEARTBEAT_PROMPT)
 
-
-async def run_once(api_key: str, engage: bool = False):
-    """Send a single heartbeat."""
-    print(f"[{datetime.now().isoformat()}] Sending heartbeat...")
-
-    # Fetch feed
-    result = await fetch_feed(api_key)
-
-    if isinstance(result, dict) and "error" in result:
-        print(f"❌ Heartbeat failed: {result['error']}")
-        return False
-
-    posts = result.get("posts", result) if isinstance(result, dict) else result
-    post_count = len(posts) if isinstance(posts, list) else 0
-    print(f"✅ Feed fetched! ({post_count} posts)")
-
-    # Engagement (optional)
-    if engage and posts and isinstance(posts, list):
-        # Pick 1-2 random posts to upvote (simulating natural engagement)
-        upvote_count = min(random.randint(1, 2), len(posts))
-        posts_to_upvote = random.sample(posts, upvote_count)
-
-        print(f"🤝 Engaging with {upvote_count} post(s)...")
-        for post in posts_to_upvote:
-            post_id = post.get("id") or post.get("post_id")
-            title = post.get("title", "Unknown")[:40]
-            if post_id:
-                vote_result = await upvote_post(api_key, post_id)
-                if "error" not in vote_result:
-                    print(f"   👍 Upvoted: {title}...")
-                else:
-                    print(f"   ⚠️  Could not upvote: {vote_result.get('error')}")
+    # Print response
+    answer = response.answer if hasattr(response, 'answer') else str(response)
+    print("\n📋 Heartbeat Summary:")
+    print("-" * 40)
+    print(answer)
+    print("-" * 40)
 
     return True
 
 
-async def run_daemon(api_key: str, interval_hours: float, engage: bool = False):
+async def run_daemon(api_key: str, interval_hours: float):
     """Run heartbeat daemon that sends heartbeats periodically."""
     interval_seconds = interval_hours * 3600
 
     print("=" * 50)
-    print("🫀 Moltbook Heartbeat Daemon")
+    print("🫀 Moltbook Heartbeat Daemon (AI-Powered)")
     print("=" * 50)
+    print(f"Model: {LLM_MODEL}")
     print(f"Interval: {interval_hours} hours ({interval_seconds} seconds)")
-    print(f"Engagement: {'enabled' if engage else 'disabled'}")
     print("Press Ctrl+C to stop")
     print("-" * 50)
 
@@ -118,14 +100,19 @@ async def run_daemon(api_key: str, interval_hours: float, engage: bool = False):
     try:
         while True:
             heartbeat_count += 1
-            print(f"\n[{datetime.now().isoformat()}] Heartbeat #{heartbeat_count}")
+            print(f"\n{'='*50}")
+            print(f"Heartbeat #{heartbeat_count}")
+            print(f"{'='*50}")
 
-            await run_once(api_key, engage=engage)
+            try:
+                await run_heartbeat(api_key)
+            except Exception as e:
+                print(f"❌ Heartbeat error: {e}")
 
             # Wait for next interval
             next_time = datetime.now().timestamp() + interval_seconds
             next_datetime = datetime.fromtimestamp(next_time)
-            print(f"⏰ Next heartbeat at: {next_datetime.isoformat()}")
+            print(f"\n⏰ Next heartbeat at: {next_datetime.isoformat()}")
 
             await asyncio.sleep(interval_seconds)
 
@@ -134,16 +121,11 @@ async def run_daemon(api_key: str, interval_hours: float, engage: bool = False):
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="Moltbook Heartbeat")
+    parser = argparse.ArgumentParser(description="Moltbook Heartbeat (AI-Powered)")
     parser.add_argument(
         "--daemon", "-d",
         action="store_true",
         help="Run as daemon (continuous heartbeats)"
-    )
-    parser.add_argument(
-        "--engage", "-e",
-        action="store_true",
-        help="Enable engagement (upvote posts)"
     )
     parser.add_argument(
         "--interval", "-i",
@@ -156,8 +138,18 @@ async def main():
         type=str,
         help="Moltbook API key (optional, uses saved credentials if not provided)"
     )
+    parser.add_argument(
+        "--model", "-m",
+        type=str,
+        default=LLM_MODEL,
+        help=f"LLM model to use (default: {LLM_MODEL})"
+    )
 
     args = parser.parse_args()
+
+    # Update model if specified
+    global LLM_MODEL
+    LLM_MODEL = args.model
 
     # Get API key
     api_key = args.api_key
@@ -175,9 +167,9 @@ async def main():
     print(f"📋 Using API key: {api_key[:25]}...")
 
     if args.daemon:
-        await run_daemon(api_key, args.interval, engage=args.engage)
+        await run_daemon(api_key, args.interval)
     else:
-        success = await run_once(api_key, engage=args.engage)
+        success = await run_heartbeat(api_key)
         sys.exit(0 if success else 1)
 
 

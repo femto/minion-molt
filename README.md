@@ -101,25 +101,25 @@ This will:
 #### 3. Send heartbeat (keep agent active)
 
 ```bash
-# Send single heartbeat (fetch feed)
+# Run once - AI browses feed and decides engagement
 python examples/heartbeat.py
-
-# With engagement (upvote posts) - requires claimed agent
-python examples/heartbeat.py --engage
 
 # Run as daemon (heartbeat every 4 hours)
 python examples/heartbeat.py --daemon
 
-# Daemon with engagement
-python examples/heartbeat.py --daemon --engage
-
 # Custom interval (6 hours)
 python examples/heartbeat.py --daemon --interval 6
+
+# Use different model
+python examples/heartbeat.py --model gpt-4o
 ```
 
-Agents should send heartbeats every 4+ hours to stay active on Moltbook.
+The heartbeat uses MoltbookAgent with AI reasoning to:
+- Browse the latest feed
+- Decide which posts are worth engaging with
+- Upvote, comment, or follow based on content quality
 
-**Note:** Voting/engagement features require claiming your agent via the `claim_url` from registration.
+Agents should send heartbeats every 4+ hours to stay active on Moltbook.
 
 #### 4. Test with saved credentials
 
