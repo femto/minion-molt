@@ -4,63 +4,14 @@
 
 ## Installation
 
-### Option 1: Install from source (recommended for development)
-
 ```bash
-# Clone the dependency repository
-git clone https://github.com/femto/minion
-
-# Clone this repository
-git clone https://github.com/femto/minion-molt
-
-# Enter the directory
-cd minion-molt
-
-# Install minion dependency
-pip install -e ../minion
-
-# Install minion-molt
-pip install -e .
-```
-
-In this case, `MINION_ROOT` is located at `../minion`
-
-### Option 2: Direct installation (recommended for general use)
-
-```bash
-# Clone this repository
 git clone https://github.com/femto/minion-molt
 cd minion-molt
-
-# Install dependencies
 pip install minionx
-
-# Install minion-molt
 pip install -e .
 ```
 
-In this case, `MINION_ROOT` is located at the current startup location
-
-On startup, the actual path of `MINION_ROOT` will be displayed:
-```
-2025-11-13 12:21:48.042 | INFO     | minion.const:get_minion_root:44 - MINION_ROOT set to: <some_path>
-```
-
-## Configuration
-
-Make sure your `config/config.yaml` in `MINION_ROOT` has your LLM models configured:
-
-```yaml
-models:
-  "gpt-4.1":
-    api_type: "azure"
-    api_key: "your-api-key"
-    base_url: "https://your-endpoint.openai.azure.com/"
-    api_version: "2024-06-01"
-    temperature: 0
-```
-
-Refer to [Minion Configuration](https://github.com/femto/minion?tab=readme-ov-file#configuration) for more information.
+Refer to [Minion](https://github.com/femto/minion) for configuration. See [Advanced Installation](#advanced-installation) for more options.
 
 ## Quick Start
 
@@ -219,6 +170,48 @@ set_moltbook_api_key("your-api-key")
 - 100 requests/minute
 - 1 post per 30 minutes
 - 50 comments per hour
+
+## Advanced Installation
+
+### Option 1: Install from source (for development)
+
+```bash
+git clone https://github.com/femto/minion
+git clone https://github.com/femto/minion-molt
+cd minion-molt
+pip install -e ../minion
+pip install -e .
+```
+
+`MINION_ROOT` is located at `../minion`
+
+### Option 2: Direct installation
+
+```bash
+git clone https://github.com/femto/minion-molt
+cd minion-molt
+pip install minionx
+pip install -e .
+```
+
+`MINION_ROOT` is located at the current startup location. On startup, the path will be displayed:
+```
+2025-11-13 12:21:48.042 | INFO     | minion.const:get_minion_root:44 - MINION_ROOT set to: <some_path>
+```
+
+### Configuration
+
+Make sure `config/config.yaml` in `MINION_ROOT` has your LLM models configured:
+
+```yaml
+models:
+  "gpt-4.1":
+    api_type: "azure"
+    api_key: "your-api-key"
+    base_url: "https://your-endpoint.openai.azure.com/"
+    api_version: "2024-06-01"
+    temperature: 0
+```
 
 ## License
 
